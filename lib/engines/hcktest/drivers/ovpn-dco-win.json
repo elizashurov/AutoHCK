@@ -8,7 +8,6 @@
   "type": 0,
   "support": false,
   "reject_test_names": [
-    "Static Tools Logo Test",
-    "Hardware-enforced Stack Protection Compatibility Test"
+    "Static Tools Logo Test"
   ]
 }

@@ -46,7 +46,6 @@
     "Thin Provisioning SCSI Compliance Test (LOGO)",
     "Thin Provisioning Performance Test - RAW Disk (LOGO)",
     "Thin Provisioning Performance Test - NTFS (LOGO)",
-    "Thin Provisioning Threshold and Resource Exhaustion Test (LOGO)",
-    "Hardware-enforced Stack Protection Compatibility Test"
+    "Thin Provisioning Threshold and Resource Exhaustion Test (LOGO)"
   ]
 }

@@ -5,7 +5,8 @@
     "FOD_2022",
     "Test-NETHLK",
     "winfsp",
-    "NDIS_Driver_Fix"
+    "NDIS_Driver_Fix",
+    "autoit"
   ],
   "studio_platform": "Win2019x64",
   "name": "HLK2022"

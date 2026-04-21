@@ -39,9 +39,6 @@
         }
       ]
     }
-  ],
-  "reject_test_names": [
-    "Hardware-enforced Stack Protection Compatibility Test"
   ]
 }
 

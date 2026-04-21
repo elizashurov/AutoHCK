@@ -7,7 +7,6 @@
   "support": false,
   "reject_test_names": [
     "DF - Embedded Signature Verification Test (Certification)",
-    "DF - Embedded Signature Verification Test (Tuning and Validation)",
-    "Hardware-enforced Stack Protection Compatibility Test"
+    "DF - Embedded Signature Verification Test (Tuning and Validation)"
   ]
 }

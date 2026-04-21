@@ -14,7 +14,6 @@
     "Test for EDID Requirements (Manual)",
     "Multimon minimum resolution check - Multihead",
     "WDDM HPD Notification Test (Manual)",
-    "Check Resolution for Dualview (WoW64) - multihead",
-    "Hardware-enforced Stack Protection Compatibility Test"
+    "Check Resolution for Dualview (WoW64) - multihead"
   ]
 }

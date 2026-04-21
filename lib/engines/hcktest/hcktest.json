@@ -46,6 +46,32 @@
           "value": "C:\\Windows\\mib.bin"
         }
       ]
+    },
+    {
+      "tests": ["Hardware-enforced Stack Protection Compatibility Test"],
+      "pre_test_commands": [
+        {
+          "desc": "Upload HSP watcher script",
+          "files_action": [
+            {
+              "local_path": "lib/engines/hcktest/scripts/autoit/hsp_watcher.au3",
+              "remote_path": "C:\\UIAgent\\autoit\\hsp_watcher.au3",
+              "direction": "local-to-remote"
+            }
+          ]
+        },
+        {
+          "desc": "Set HSP watcher to start on any user logon and reboot to activate",
+          "guest_run": "New-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run' -Name 'AutoHCK_UIWatcher' -Value '\"C:\\Program Files (x86)\\AutoIt3\\AutoIt3.exe\" \"C:\\UIAgent\\autoit\\hsp_watcher.au3\"' -PropertyType String -Force",
+          "guest_reboot": true
+        }
+      ],
+      "post_test_commands": [
+        {
+          "desc": "Stop and remove HSP watcher",
+          "guest_run": "Remove-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run' -Name 'AutoHCK_UIWatcher' -ErrorAction SilentlyContinue; Stop-Process -Name AutoIt3 -Force -ErrorAction SilentlyContinue; exit 0"
+        }
+      ]
     }
   ]
 }

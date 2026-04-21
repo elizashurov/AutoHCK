@@ -4,8 +4,5 @@
   "inf": "viomem.inf",
   "install_method": "PNP",
   "type": 0,
-  "support": false,
-  "reject_test_names": [
-    "Hardware-enforced Stack Protection Compatibility Test"
-  ]
+  "support": false
 }
