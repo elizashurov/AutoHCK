@@ -205,6 +205,11 @@ module AutoHCK
 
       run_command_on_client(@client, command.guest_run, command.desc, replacement)
       run_command_on_client(@support, command.guest_run, command.desc, replacement) unless @support.nil?
+
+      return unless command.guest_reboot
+
+      @logger.info("Rebooting client #{@client.name} after command (#{command.desc})")
+      @tools.restart_machine(@client.name)
     end
 
     def run_host_test_command(command)
