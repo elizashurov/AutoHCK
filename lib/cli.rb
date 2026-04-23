@@ -99,6 +99,8 @@ module AutoHCK
     prop :extensions, T::Array[String], default: []
     prop :net_test_speed, Integer, default: 10_000
     prop :auto_retry_failed_tests, Integer, default: 0
+    prop :query, T.nilable(String)
+    prop :query_output_file, T.nilable(String)
 
     def create_parser
       OptionParser.new do |parser|
@@ -236,6 +238,15 @@ module AutoHCK
                 '  0 - do not retry failed tests;',
                 '  N - retry failed tests up to N times.',
                 &method(:auto_retry_failed_tests=))
+
+      parser.on('--query <query>', String,
+                'Run a query and exit without starting a test session.',
+                'Supported queries: images-names',
+                &method(:query=))
+
+      parser.on('--query-output-file <path>', String,
+                'Write query output to the specified file in addition to the log',
+                &method(:query_output_file=))
     end
     # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
   end

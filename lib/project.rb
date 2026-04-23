@@ -30,8 +30,41 @@ module AutoHCK
       scope << self
     end
 
+    def images_names_query_output
+      raise(AutoHCKError, "Platform #{@options.test.platform} not found") if @engine_platform.nil?
+
+      lines = ["Studio image: #{@engine_platform['st_image']}"]
+      @engine_platform['clients'].each_value do |client|
+        lines << "Client #{client['name']}: #{client['image']}"
+      end
+      lines.join("\n")
+    end
+
+    def write_query_output_file(output)
+      File.write(@options.test.query_output_file, "#{output}\n")
+    rescue SystemCallError => e
+      raise(AutoHCKError, "Failed to write query output to #{@options.test.query_output_file}: #{e.message}")
+    end
+
+    def handle_query(query)
+      case query
+      when 'images-names'
+        output = images_names_query_output
+        @logger.info(output)
+        write_query_output_file(output) unless @options.test.query_output_file.nil?
+      else
+        raise(AutoHCKError, "Unknown query: #{query}")
+      end
+    end
+
     def prepare
       @extra_sw_manager = ExtraSoftwareManager.new(self)
+
+      query = @options.test.query
+      unless query.nil?
+        handle_query(query)
+        return false
+      end
 
       @engine = @engine_type.new(self)
       Sentry.set_tags('autohck.tag': @engine_tag)
@@ -165,7 +198,13 @@ module AutoHCK
       @github.handle_cancel
     end
 
+    def query_mode?
+      @options.mode == 'test' && !@options.test.query.nil?
+    end
+
     def init_workspace
+      return if query_mode?
+
       unless @options.common.workspace_path.nil?
         @workspace_path = @options.common.workspace_path
         return
@@ -210,6 +249,8 @@ module AutoHCK
     end
 
     def close
+      return if query_mode?
+
       @logger.debug('Closing AutoHCK project')
       generate_junit
 
