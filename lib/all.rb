@@ -17,6 +17,7 @@ module AutoHCK
   require 'shellwords'
   require 'socket'
   require 'tempfile'
+  require 'time'
   require 'uri'
   require 'yaml'
   require 'zip'

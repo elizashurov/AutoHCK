@@ -69,12 +69,20 @@ module AutoHCK
       @logger.info('Image creating is currently not supported for physical machines')
     end
 
+    def save_studio_image_metadata(_metadata)
+      @logger.info('Image metadata saving is currently not supported for physical machines')
+    end
+
     def check_client_image_exist(_name)
       @logger.info('Image checking is currently not supported for physical machines')
     end
 
     def create_client_image(_name)
       @logger.info('Image creating is currently not supported for physical machines')
+    end
+
+    def save_client_image_metadata(_name, _metadata)
+      @logger.info('Image metadata saving is currently not supported for physical machines')
     end
 
     def run_studio(*)

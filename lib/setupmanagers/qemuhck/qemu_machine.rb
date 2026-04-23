@@ -671,6 +671,10 @@ module AutoHCK
       @sm.create_boot_image
     end
 
+    def save_image_metadata(metadata)
+      @sm.save_image_metadata(metadata)
+    end
+
     def delete_snapshot
       @sm.delete_boot_snapshot
     end

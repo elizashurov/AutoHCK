@@ -106,10 +106,10 @@ module AutoHCK
     end
 
     def prepare_extra_sw
-      extra_software = [*@kit_info.extra_software, *@project.engine_platform['extra_software']]
+      @extra_software = [*@kit_info.extra_software, *@project.engine_platform['extra_software']]
 
       @project.extra_sw_manager.prepare_software_packages(
-        extra_software, @project.engine_platform['kit'], ENGINE_MODE
+        @extra_software, @project.engine_platform['kit'], ENGINE_MODE
       )
 
       @project.extra_sw_manager.copy_to_setup_scripts(@workspace_hlk_setup_scripts_path)
@@ -470,6 +470,41 @@ module AutoHCK
       !@project.options.install.skip_client
     end
 
+    def image_metadata(iso_info, type)
+      {
+        date: Time.now.utc.iso8601,
+        iso_name: iso_info['path'],
+        windows_image_names: iso_info.dig(type, 'windows_image_names'),
+        autohck_version: AutoHCK::VERSION,
+        extra_software: @extra_software
+      }
+    end
+
+    def generate_client_image_metadata(client_name)
+      @logger.debug("Generating metadata for client image: #{client_name}")
+
+      metadata = image_metadata(@client_iso_info, 'client')
+
+      @project.setup_manager.save_client_image_metadata(client_name, metadata)
+    end
+
+    def generate_studio_image_metadata
+      @logger.debug('Generating studio image metadata')
+
+      metadata = image_metadata(@studio_iso_info, 'studio')
+
+      @project.setup_manager.save_studio_image_metadata(metadata)
+    end
+
+    def generate_images_metadata(studio:, client:)
+      if client
+        @clients_name.each do |client_name|
+          generate_client_image_metadata(client_name)
+        end
+      end
+      generate_studio_image_metadata if studio
+    end
+
     def run
       @logger.debug('HCKInstall: run')
 
@@ -482,6 +517,8 @@ module AutoHCK
         run_first(studio:, client:)
         run_second(client:)
       end
+
+      generate_images_metadata(studio:, client:)
     end
   end
 end

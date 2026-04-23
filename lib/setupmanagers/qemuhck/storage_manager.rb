@@ -52,6 +52,12 @@ module AutoHCK
         create_image(@boot_image_path, 150, IMAGE_FORMAT)
       end
 
+      def save_image_metadata(metadata)
+        metadata[:checksum] = Digest::SHA256.file(@boot_image_path).hexdigest
+
+        File.write("#{@boot_image_path}.json", metadata.to_json)
+      end
+
       def create_test_image
         if File.exist?(@fs_test_image)
           @logger.info("Coping test image for CL#{@client_id}")

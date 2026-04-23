@@ -186,12 +186,20 @@ module AutoHCK
       @studio_vm.create_image
     end
 
+    def save_studio_image_metadata(metadata)
+      @studio_vm.save_image_metadata(metadata)
+    end
+
     def check_client_image_exist(name)
       @clients_vm[name].check_image_exist
     end
 
     def create_client_image(name)
       @clients_vm[name].create_image
+    end
+
+    def save_client_image_metadata(name, metadata)
+      @clients_vm[name].save_image_metadata(metadata)
     end
 
     def studio_option_config(option)
