@@ -44,6 +44,7 @@ module AutoHCK
       @last_percent = 0
 
       client = HTTPClient.new
+      client.ssl_config.set_default_paths
 
       head = client.head(url, follow_redirect: true)
       raise(AutoHCKError, "Download failed with code #{head.status}") unless head.status == 200
