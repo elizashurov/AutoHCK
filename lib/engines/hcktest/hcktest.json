@@ -25,6 +25,24 @@
       "tests": [
         "Flush Test"
       ],
+      "kits": ["HLK1607"],
+      "parameters": [
+        {
+          "name": "SNMP_IP_ADDRESS",
+          "value": "192.168.100.100"
+        },
+        {
+          "name": "SNMP_PORT",
+          "value": "161"
+        }
+      ]
+    },
+    {
+      "tests": [
+        "Flush Test"
+      ],
+      "kits": ["HLK1809", "HLK1809server", "HLK2004", "HLK20H2", "HLK2022", "HLK2025", "HLK2025_next",
+               "HLK11_22H2", "HLK11_23H2", "HLK11_24H2", "HLK11_25H2", "HLK11_next"],
       "parameters": [
         {
           "name": "IP",
