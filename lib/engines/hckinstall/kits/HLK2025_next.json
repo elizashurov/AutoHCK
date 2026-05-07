@@ -1,7 +1,8 @@
 {
   "extra_software": [
     "Disable_SNV",
-    "winfsp"
+    "winfsp",
+    "autoit"
   ],
   "studio_platform": "Win2025x64",
   "name": "HLK2025_next"

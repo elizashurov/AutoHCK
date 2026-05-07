@@ -2,7 +2,8 @@
   "download_url": "https://go.microsoft.com/fwlink/?linkid=2335862",
   "extra_software": [
     "winfsp",
-    "NDIS65_ndprot683_fix"
+    "NDIS65_ndprot683_fix",
+    "autoit"
   ],
   "studio_platform": "Win2022x64",
   "name": "HLK11_24H2"

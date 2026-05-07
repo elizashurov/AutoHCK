@@ -4,7 +4,8 @@
   "extra_software": [
     "HLK_GRFX_FOD",
     "WDTFNetData_1809",
-    "winfsp"
+    "winfsp",
+    "autoit"
   ],
   "studio_platform": "Win2019x64",
   "name": "HLK1809"

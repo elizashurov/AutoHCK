@@ -3,7 +3,8 @@
   "sha256": "4b54a67374e32e0239669e4394134cec070d4390a8ef8f2b9a0bd14ae9d1bc6d",
   "extra_software": [
     "winfsp",
-    "NDIS65_ndprot683_fix"
+    "NDIS65_ndprot683_fix",
+    "autoit"
   ],
   "studio_platform": "Win2022x64",
   "name": "HLK11_25H2"
