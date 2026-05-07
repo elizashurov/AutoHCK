@@ -8,12 +8,68 @@
   "enlightenments_state": true,
   "s3_state": false,
   "s4_state": false,
+  "tests_config": [
+    {
+      "tests": [
+        "Test for EDID Requirements \\(Manual\\)"
+      ],
+      "pre_test_commands": [
+        {
+          "desc": "Upload EDID watcher script",
+          "files_action": [
+            {
+              "local_path": "lib/engines/hcktest/scripts/autoit/edid_watcher.au3",
+              "remote_path": "C:\\UIAgent\\autoit\\edid_watcher.au3",
+              "direction": "local-to-remote"
+            }
+          ]
+        },
+        {
+          "desc": "Set EDID watcher to start on any user logon and reboot to activate",
+          "guest_run": "New-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run' -Name 'AutoHCK_EDIDWatcher' -Value '\"C:\\Program Files (x86)\\AutoIt3\\AutoIt3.exe\" \"C:\\UIAgent\\autoit\\edid_watcher.au3\"' -PropertyType String -Force",
+          "guest_reboot": true
+        }
+      ],
+      "post_test_commands": [
+        {
+          "desc": "Stop and remove EDID watcher",
+          "guest_run": "Remove-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run' -Name 'AutoHCK_EDIDWatcher' -ErrorAction SilentlyContinue; Stop-Process -Name AutoIt3 -Force -ErrorAction SilentlyContinue; exit 0"
+        }
+      ]
+    },
+    {
+      "tests": [
+        "WDDM HPD Notification Test \\(Manual\\)"
+      ],
+      "pre_test_commands": [
+        {
+          "desc": "Upload HPD watcher script",
+          "files_action": [
+            {
+              "local_path": "lib/engines/hcktest/scripts/autoit/hpd_watcher.au3",
+              "remote_path": "C:\\UIAgent\\autoit\\hpd_watcher.au3",
+              "direction": "local-to-remote"
+            }
+          ]
+        },
+        {
+          "desc": "Set HPD watcher to start on any user logon and reboot to activate",
+          "guest_run": "New-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run' -Name 'AutoHCK_HPDWatcher' -Value '\"C:\\Program Files (x86)\\AutoIt3\\AutoIt3.exe\" \"C:\\UIAgent\\autoit\\hpd_watcher.au3\"' -PropertyType String -Force",
+          "guest_reboot": true
+        }
+      ],
+      "post_test_commands": [
+        {
+          "desc": "Stop and remove HPD watcher",
+          "guest_run": "Remove-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run' -Name 'AutoHCK_HPDWatcher' -ErrorAction SilentlyContinue; Stop-Process -Name AutoIt3 -Force -ErrorAction SilentlyContinue; exit 0"
+        }
+      ]
+    }
+  ],
   "reject_test_names": [
     "DF - Embedded Signature Verification Test (Certification)",
     "DF - Embedded Signature Verification Test (Tuning and Validation)",
-    "Test for EDID Requirements (Manual)",
     "Multimon minimum resolution check - Multihead",
-    "WDDM HPD Notification Test (Manual)",
     "Check Resolution for Dualview (WoW64) - multihead"
   ]
 }
