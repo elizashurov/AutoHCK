@@ -1,6 +1,7 @@
 {
   "extra_software": [
-    "winfsp"
+    "winfsp",
+    "autoit"
   ],
   "studio_platform": "Win2022x64",
   "name": "HLK11_23H2"

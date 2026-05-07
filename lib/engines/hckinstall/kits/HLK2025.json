@@ -5,7 +5,8 @@
     "Test-NETHLK",
     "winfsp",
     "RoMetadataDll",
-    "NDIS65_ndprot683_fix"
+    "NDIS65_ndprot683_fix",
+    "autoit"
   ],
   "studio_platform": "Win2022x64",
   "name": "HLK2025"
