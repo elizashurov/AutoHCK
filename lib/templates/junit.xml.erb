@@ -28,7 +28,9 @@
                 <% unless test_step.last_result.nil? %>
                     <system-out><%= JSON.pretty_generate(test_step.last_result) %></system-out>
                 <% end %>
-                <% if test_step.status == Models::HLK::TestResultStatus::Failed %>
+                <% if test_step.errata %>
+                    <system-out>Passed with errata: <%= test_step.errata %></system-out>
+                <% elsif test_step.status == Models::HLK::TestResultStatus::Failed %>
                     <failure />
                 <% elsif test_step.is_skipped %>
                     <skipped />

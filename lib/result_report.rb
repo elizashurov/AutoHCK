@@ -40,12 +40,18 @@ module AutoHCK
 
     def test_stats(test_steps)
       run_steps = test_steps.reject(&:is_skipped)
+      passed_with_errata = run_steps.count do |t|
+        t.errata &&
+          t.executionstate == Models::HLK::ExecutionState::NotRunning
+      end
       passed = run_steps.count do |t|
         t.status == Models::HLK::TestResultStatus::Passed &&
+          t.errata.nil? &&
           t.executionstate == Models::HLK::ExecutionState::NotRunning
       end
       failed = run_steps.count do |t|
         t.status == Models::HLK::TestResultStatus::Failed &&
+          t.errata.nil? &&
           t.executionstate == Models::HLK::ExecutionState::NotRunning
       end
       total = run_steps.count
@@ -53,8 +59,9 @@ module AutoHCK
 
       {
         'passed' => passed,
+        'passed_with_errata' => passed_with_errata,
         'failed' => failed,
-        'inqueue' => total - passed - failed,
+        'inqueue' => total - passed - passed_with_errata - failed,
         'skipped' => skipped
       }
     end

@@ -79,6 +79,8 @@
                         <% row += 1 %>
                         <% if test.is_skipped %>
                         <tr class="table-warning">
+                        <% elsif test.errata %>
+                        <tr class="table-info">
                         <% elsif test.status == AutoHCK::Models::HLK::TestResultStatus::Passed %>
                         <tr class="table-success">
                         <% elsif test.status == AutoHCK::Models::HLK::TestResultStatus::Failed %>
@@ -93,7 +95,13 @@
                                 <% unless test.url.nil? %></a><% end %>
                             </td>
                             <td><%= test.estimatedruntime %></td>
-                            <td><%= test.is_skipped ? 'Skipped' : test.status.to_s %></td>
+                            <td>
+                                <% if test.errata %>
+                                    Passed (with errata)
+                                <% else %>
+                                    <%= test.is_skipped ? 'Skipped' : test.status.to_s %>
+                                <% end %>
+                            </td>
                         </tr>
                     <% end %>
                 </tbody>
@@ -118,6 +126,7 @@
                     <% end %>
                     'Failed',
                     'Passed',
+                    'Passed (with errata)',
                     'NotRun'
                 ],
                 datasets: [{
@@ -127,6 +136,7 @@
                         <% end %>
                         <%= test_stats['failed'] %>,
                         <%= test_stats['passed'] %>,
+                        <%= test_stats['passed_with_errata'] %>,
                         <%= test_stats['inqueue'] %>
                     ],
                     backgroundColor: [
@@ -135,6 +145,7 @@
                         <% end %>
                         '#DC3545',
                         '#28A745',
+                        '#0DCAF0',
                         '#6C757D',
                     ],
                     borderWidth: 1

@@ -18,6 +18,13 @@
   "tests_config": [
     {
       "tests": [
+        "Flush Test"
+      ],
+      "kits": ["HLK2022"],
+      "errata": "Flush Test - known HLK failure on Win2022"
+    },
+    {
+      "tests": [
         ".*"
       ],
       "pre_test_commands": [

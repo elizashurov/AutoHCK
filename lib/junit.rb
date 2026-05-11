@@ -74,7 +74,7 @@ module AutoHCK
     end
 
     def junit_failed_test_steps_count
-      engine_test_steps.count { _1.status == Models::HLK::TestResultStatus::Failed }
+      engine_test_steps.count { _1.status == Models::HLK::TestResultStatus::Failed && _1.errata.nil? }
     end
 
     def junit_suite_tests_count
