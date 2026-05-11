@@ -20,6 +20,7 @@ module AutoHCK
       const :kits, T::Array[String], default: []
       const :parameters, T::Array[Parameter], default: []
       const :skip_retry, T::Boolean, default: false
+      const :errata, T.nilable(String), default: nil
       const :pre_test_commands, T::Array[CommandInfo], default: []
       const :post_test_commands, T::Array[CommandInfo], default: []
     end

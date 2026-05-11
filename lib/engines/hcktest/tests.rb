@@ -187,6 +187,10 @@ module AutoHCK
       select_test_config(test_name, :skip_retry).any? { _1 == true }
     end
 
+    def test_errata(test_name)
+      select_test_config(test_name, :errata).compact.first
+    end
+
     def run_command_on_client(client, command, desc, guest_reboot, replacement)
       cl_name = client.name
       @logger.info("Running command (#{desc}) on client #{cl_name}")
@@ -547,6 +551,14 @@ module AutoHCK
 
       test.finished_at = DateTime.now
       test.last_result = test_result
+
+      return unless test.status == Models::HLK::TestResultStatus::Failed
+
+      errata = test_errata(test.name)
+      return unless errata
+
+      @logger.info("Test '#{test.name}' failed but has manual errata: #{errata}")
+      test.errata = errata
     end
 
     sig { params(result: T::Hash[String, T.untyped]).returns(Models::HLK::Test) }
