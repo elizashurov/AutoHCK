@@ -64,12 +64,39 @@
           "guest_run": "Remove-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run' -Name 'AutoHCK_HPDWatcher' -ErrorAction SilentlyContinue; Stop-Process -Name AutoIt3 -Force -ErrorAction SilentlyContinue; exit 0"
         }
       ]
+    },
+    {
+      "tests": [
+        "Multimon minimum resolution check - Multihead",
+        "Check Resolution for Dualview \\(WoW64\\) - multihead"
+      ],
+      "pre_test_commands": [
+        {
+          "desc": "Upload Multimon watcher script",
+          "files_action": [
+            {
+              "local_path": "lib/engines/hcktest/scripts/autoit/multimon_watcher.au3",
+              "remote_path": "C:\\UIAgent\\autoit\\multimon_watcher.au3",
+              "direction": "local-to-remote"
+            }
+          ]
+        },
+        {
+          "desc": "Set Multimon watcher to start on any user logon and reboot to activate",
+          "guest_run": "New-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run' -Name 'AutoHCK_MultimonWatcher' -Value '\"C:\\Program Files (x86)\\AutoIt3\\AutoIt3.exe\" \"C:\\UIAgent\\autoit\\multimon_watcher.au3\"' -PropertyType String -Force",
+          "guest_reboot": true
+        }
+      ],
+      "post_test_commands": [
+        {
+          "desc": "Stop and remove Multimon watcher",
+          "guest_run": "Remove-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run' -Name 'AutoHCK_MultimonWatcher' -ErrorAction SilentlyContinue; Stop-Process -Name AutoIt3 -Force -ErrorAction SilentlyContinue; exit 0"
+        }
+      ]
     }
   ],
   "reject_test_names": [
     "DF - Embedded Signature Verification Test (Certification)",
-    "DF - Embedded Signature Verification Test (Tuning and Validation)",
-    "Multimon minimum resolution check - Multihead",
-    "Check Resolution for Dualview (WoW64) - multihead"
+    "DF - Embedded Signature Verification Test (Tuning and Validation)"
   ]
 }
