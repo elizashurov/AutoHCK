@@ -3,6 +3,7 @@
   "client_iso": "Win2025x64",
   "kit": "HLK2025",
   "setupmanager": "qemuhck",
+  "tpm_state": true,
   "enlightenments_state": true,
   "cpu": "host",
   "st_image": "HLK2025.qcow2",

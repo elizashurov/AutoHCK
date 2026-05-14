@@ -3,6 +3,7 @@
   "client_iso": "Win11_23H2x64",
   "kit": "HLK11_23H2",
   "setupmanager": "qemuhck",
+  "tpm_state": true,
   "clients_options": {
     "viommu_state": true,
     "enlightenments_state": true
