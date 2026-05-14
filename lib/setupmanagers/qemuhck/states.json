@@ -59,8 +59,8 @@
             ]
         }
     },
-    "fw_type": {
-        "uefi": {
+    "tpm_state": {
+        "true": {
             "devices_list": [
                 "tpm-tis"
             ]
