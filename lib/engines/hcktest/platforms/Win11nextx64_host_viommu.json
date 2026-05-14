@@ -3,6 +3,7 @@
   "client_iso": "Win11nextx64",
   "kit": "HLK11_next",
   "setupmanager": "qemuhck",
+  "tpm_state": true,
   "clients_options": {
     "viommu_state": true,
     "enlightenments_state": true

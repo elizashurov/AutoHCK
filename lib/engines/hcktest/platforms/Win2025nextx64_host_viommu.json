@@ -3,6 +3,7 @@
   "client_iso": "Win2025nextx64",
   "kit": "HLK2025_next",
   "setupmanager": "qemuhck",
+  "tpm_state": true,
   "clients_options": {
     "viommu_state": true,
     "enlightenments_state": true

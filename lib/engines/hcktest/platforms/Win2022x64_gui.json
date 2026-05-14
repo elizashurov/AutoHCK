@@ -3,6 +3,7 @@
   "client_iso": "Win2022x64-gui",
   "kit": "HLK2022",
   "setupmanager": "qemuhck",
+  "tpm_state": true,
   "st_image": "HLK2022.qcow2",
   "clients": {
     "c1": {
