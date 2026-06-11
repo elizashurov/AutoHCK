@@ -1,0 +1,56 @@
+{
+    "name": "balloon_deflate",
+    "description": "Start balloon service, run service stop/start cycle, verify resilience",
+    "test_system_ref": "VIRT-102",
+    "timeout": 300,
+    "requirements": {
+        "drivers": [ "Balloon" ],
+        "platforms": [ "Win10x64", "Win2019x64", "Win2022x64", "Win2025x64" ]
+    },
+    "test_steps": [
+        {
+            "desc": "Upload balloon driver package",
+            "files_action": [
+                {
+                    "local_path": "@driver_path@",
+                    "remote_path": "C:\\AutoHCK\\balloon_pkg",
+                    "direction": "local-to-remote"
+                }
+            ]
+        },
+        {
+            "desc": "Install and start balloon service",
+            "guest_run": "$blnsvr = Get-ChildItem -Recurse C:\\AutoHCK\\balloon_pkg -Filter blnsvr.exe | Select-Object -First 1; if (-not $blnsvr) { throw 'blnsvr.exe not found' }; & $blnsvr.FullName -i; Start-Sleep 2; if ((Get-Service BalloonService).Status -ne 'Running') { Start-Service BalloonService }; Write-Output \"Service started: $((Get-Service BalloonService).Status)\"",
+            "timeout": 30
+        },
+        {
+            "desc": "Stop balloon service",
+            "guest_run": "Stop-Service BalloonService -Force; Start-Sleep 2; $s = Get-Service BalloonService; Write-Output \"Stopped: $($s.Status)\"",
+            "timeout": 30
+        },
+        {
+            "desc": "Restart balloon service",
+            "guest_run": "Start-Service BalloonService; Start-Sleep 2; $s = Get-Service BalloonService; if ($s.Status -ne 'Running') { throw \"Service did not restart: $($s.Status)\" }; Write-Output \"PASS: BalloonService restarted: $($s.Status)\"",
+            "expected_output_contains": "PASS:",
+            "timeout": 30
+        },
+        {
+            "desc": "Verify balloon driver module still running after service cycle",
+            "guest_run": "$d = (driverquery /fo csv | ConvertFrom-Csv) | Where-Object { $_.'Module Name' -eq 'balloon' }; if (-not $d) { throw 'balloon driver not running after service cycle' }; Write-Output \"PASS: balloon driver $($d.State) after service stop/start\"",
+            "expected_output_contains": "PASS:",
+            "timeout": 15
+        }
+    ],
+    "cleanup": [
+        {
+            "desc": "Uninstall balloon service",
+            "guest_run": "$blnsvr = Get-ChildItem -Recurse C:\\AutoHCK\\balloon_pkg -Filter blnsvr.exe -ErrorAction SilentlyContinue | Select-Object -First 1; if ($blnsvr) { Stop-Service BalloonService -Force -ErrorAction SilentlyContinue; & $blnsvr.FullName -u }",
+            "ignore_errors": true
+        },
+        {
+            "desc": "Remove balloon package directory",
+            "guest_run": "Remove-Item -Recurse -Force C:\\AutoHCK\\balloon_pkg -ErrorAction SilentlyContinue",
+            "ignore_errors": true
+        }
+    ]
+}

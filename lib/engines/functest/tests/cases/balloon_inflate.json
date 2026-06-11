@@ -1,0 +1,59 @@
+{
+    "name": "balloon_inflate",
+    "description": "Install balloon service and verify memory reporting via the service",
+    "test_system_ref": "VIRT-101",
+    "timeout": 300,
+    "requirements": {
+        "drivers": [ "Balloon" ],
+        "platforms": [ "Win10x64", "Win2019x64", "Win2022x64", "Win2025x64" ],
+        "devices": [ "virtio-balloon-pci" ]
+    },
+    "test_steps": [
+        {
+            "desc": "Verify Balloon PnP device is present and OK",
+            "guest_run": "$d = Get-PnpDevice | Where-Object { $_.HardwareID -match 'VEN_1AF4&DEV_1002|VEN_1AF4&DEV_1045' }; if (-not $d) { throw 'Balloon device not found' }; Write-Output \"PASS: Balloon device $($d.FriendlyName) is $($d.Status)\"; if ($d.Status -eq 'Error') { throw 'Balloon device in Error state: ' + $d.ConfigManagerErrorCode }",
+            "expected_output_contains": "PASS:",
+            "timeout": 30
+        },
+        {
+            "desc": "Upload balloon driver package (contains blnsvr.exe)",
+            "files_action": [
+                {
+                    "local_path": "@driver_path@",
+                    "remote_path": "C:\\AutoHCK\\balloon_pkg",
+                    "direction": "local-to-remote"
+                }
+            ]
+        },
+        {
+            "desc": "Install balloon service",
+            "guest_run": "$blnsvr = Get-ChildItem -Recurse C:\\AutoHCK\\balloon_pkg -Filter blnsvr.exe | Select-Object -First 1; if (-not $blnsvr) { throw 'blnsvr.exe not found in driver package' }; & $blnsvr.FullName -i; Start-Sleep 2; $svc = Get-Service BalloonService -ErrorAction SilentlyContinue; if (-not $svc) { throw 'BalloonService not registered after install' }; if ($svc.Status -ne 'Running') { Start-Service BalloonService }; Write-Output \"PASS: BalloonService is $($(Get-Service BalloonService).Status)\"",
+            "expected_output_contains": "PASS:",
+            "timeout": 30
+        },
+        {
+            "desc": "Record initial free memory (KB)",
+            "guest_run": "$free = (Get-WmiObject Win32_OperatingSystem).FreePhysicalMemory; Write-Output \"Free memory: $free KB\"",
+            "capture_output": "initial_free_memory_kb",
+            "timeout": 10
+        },
+        {
+            "desc": "Verify balloon driver module is running",
+            "guest_run": "$d = (driverquery /fo csv | ConvertFrom-Csv) | Where-Object { $_.'Module Name' -eq 'balloon' }; if (-not $d) { throw 'balloon driver module not running' }; Write-Output \"PASS: balloon driver is $($d.State)\"",
+            "expected_output_contains": "PASS:",
+            "timeout": 15
+        }
+    ],
+    "cleanup": [
+        {
+            "desc": "Uninstall balloon service",
+            "guest_run": "$blnsvr = Get-ChildItem -Recurse C:\\AutoHCK\\balloon_pkg -Filter blnsvr.exe -ErrorAction SilentlyContinue | Select-Object -First 1; if ($blnsvr) { Stop-Service BalloonService -Force -ErrorAction SilentlyContinue; & $blnsvr.FullName -u }",
+            "ignore_errors": true
+        },
+        {
+            "desc": "Remove balloon package directory",
+            "guest_run": "Remove-Item -Recurse -Force C:\\AutoHCK\\balloon_pkg -ErrorAction SilentlyContinue",
+            "ignore_errors": true
+        }
+    ]
+}

@@ -1,0 +1,13 @@
+{
+    "name": "balloon_basic",
+    "description": "Basic balloon driver and service sanity tests",
+    "test_system_ref": "VIRT-100",
+    "tests": [
+        "balloon_inflate",
+        "balloon_deflate"
+    ],
+    "requirements": {
+        "drivers": [ "Balloon" ],
+        "platforms": [ "Win10x64", "Win2019x64", "Win2022x64", "Win2025x64" ]
+    }
+}

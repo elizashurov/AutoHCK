@@ -38,6 +38,8 @@ module AutoHCK
   autoload_relative :Engine, 'engines/engine'
   autoload_relative :EngineError, 'engines/exceptions'
   autoload_relative :ExtraSoftwareBrokenConfig, 'auxiliary/extra_software/exceptions'
+  autoload_relative :FunctestClient, 'setupmanagers/functest_client'
+  autoload_relative :FunctestEngine, 'engines/functest/functest'
   autoload_relative :ExtraSoftwareManager, 'auxiliary/extra_software/manager'
   autoload_relative :ExtraSoftwareMissingConfig, 'auxiliary/extra_software/exceptions'
   autoload_relative :Github, 'auxiliary/github'

@@ -13,6 +13,8 @@ gem 'erubi'
 gem 'filelock'
 gem 'httpclient'
 gem 'mono_logger'
+gem 'net-scp'
+gem 'net-ssh'
 gem 'octokit'
 gem 'openssl', require: false
 gem 'rtoolsHCK', git: 'https://github.com/HCK-CI/rtoolsHCK.git', ref: 'v0.7.2'

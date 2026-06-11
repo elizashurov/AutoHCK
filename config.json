@@ -3,6 +3,7 @@
     "extra_software": "/home/hck-ci/HCK-CI/extra-software",
     "workspace_path": "/home/hck-ci/HCK-CI/workspace",
     "winrm_port": 5985,
+    "ssh_port": 22,
     "repository": "virtio-win/kvm-guest-drivers-windows",
     "windows_username": "Administrator",
     "windows_password": "Qum5net.",
@@ -10,5 +11,6 @@
     "test_engine": "hcktest",
     "install_engine": "hckinstall",
     "config_engine": "config_manager",
+    "functest_engine": "functest",
     "time_out": "9"
 }

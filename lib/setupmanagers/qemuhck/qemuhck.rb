@@ -251,6 +251,10 @@ module AutoHCK
       @clients_vm[name].option_config(option)
     end
 
+    def find_client_world_ip(name)
+      @clients_vm[name].find_world_ip
+    end
+
     def run_studio(scope, run_opts = nil)
       @studio_vm.run(scope, run_opts)
     end
@@ -265,6 +269,10 @@ module AutoHCK
 
     def run_hck_client(scope, studio, name, run_opts)
       HCKClient.new(self, scope, studio, name, run_opts)
+    end
+
+    def run_functest_client(scope, name, run_opts = nil)
+      FunctestClient.new(self, scope, name, run_opts)
     end
 
     def self.enter(workspace_path)

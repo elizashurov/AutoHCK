@@ -1,0 +1,57 @@
+{
+    "name": "driver_update",
+    "description": "Uninstall and reinstall the driver from the driver package (uses @driver_module@, @driver_inf@, @driver_path@)",
+    "test_system_ref": "VIRT-201",
+    "timeout": 600,
+    "test_steps": [
+        {
+            "desc": "Confirm driver is currently installed",
+            "guest_run": "$d = (driverquery /fo csv | ConvertFrom-Csv) | Where-Object { $_.'Module Name' -eq '@driver_module@' }; if (-not $d) { throw 'Driver @driver_module@ not found before update' }; Write-Output \"Pre-update: $($d.'Display Name') is $($d.State)\"",
+            "timeout": 30
+        },
+        {
+            "desc": "Remove @driver_module@ from the Windows driver store",
+            "guest_run": "$drv = Get-WindowsDriver -Online | Where-Object { $_.OriginalFileName -like '*@driver_module@.inf' } | Select-Object -First 1; if (-not $drv) { throw 'Driver @driver_module@ not found in driver store' }; Write-Output \"Removing $($drv.Driver)\"; pnputil /delete-driver $drv.Driver /uninstall /force; Write-Output 'Driver removed from store'",
+            "expected_output_contains": "Driver removed from store",
+            "timeout": 120
+        },
+        {
+            "desc": "Reboot to complete driver removal",
+            "guest_reboot": true,
+            "wait_for_login": true
+        },
+        {
+            "desc": "Upload fresh driver package from host",
+            "files_action": [
+                {
+                    "local_path": "@driver_path@",
+                    "remote_path": "C:\\AutoHCK\\driver_reinstall",
+                    "direction": "local-to-remote"
+                }
+            ]
+        },
+        {
+            "desc": "Reinstall driver from uploaded package",
+            "guest_run": "pnputil -i -a C:\\AutoHCK\\driver_reinstall\\@driver_inf@",
+            "expected_output_matches": "(?i)(successfully installed|driver package added|0 error)",
+            "timeout": 120
+        },
+        {
+            "desc": "Reboot so reinstalled driver is fully active",
+            "guest_reboot": true
+        },
+        {
+            "desc": "Verify @driver_module@.sys is present and signed after reinstall",
+            "guest_run": "$drv = Get-WindowsDriver -Online | Where-Object { $_.OriginalFileName -like '*@driver_module@.inf' } | Select-Object -First 1; if (-not $drv) { throw '@driver_module@ not found in DriverStore after reinstall' }; $drvDir = Split-Path $drv.OriginalFileName -Parent; $sys = Get-ChildItem $drvDir -Filter '@driver_module@.sys' -ErrorAction SilentlyContinue | Select-Object -First 1; if (-not $sys) { throw '@driver_module@.sys not found in DriverStore at ' + $drvDir }; $sig = Get-AuthenticodeSignature $sys.FullName; if ($sig.Status -ne 'Valid') { throw 'Signature invalid after reinstall: ' + $sig.Status }; Write-Output \"PASS: @driver_module@.sys reinstalled and signed ($($sig.Status))\"",
+            "expected_output_contains": "PASS:",
+            "timeout": 60
+        }
+    ],
+    "cleanup": [
+        {
+            "desc": "Remove temporary driver upload directory",
+            "guest_run": "Remove-Item -Recurse -Force C:\\AutoHCK\\driver_reinstall -ErrorAction SilentlyContinue",
+            "ignore_errors": true
+        }
+    ]
+}

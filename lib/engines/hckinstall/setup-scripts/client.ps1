@@ -52,6 +52,7 @@ function Stage-One {
     "$STUDIOIP $STUDIOCOMPUTERNAME #STUDIO VM IP" |  Out-File -encoding ASCII -append 'C:\Windows\System32\drivers\etc\hosts'
 
     Enable-PowerShellRemoting
+    Enable-OpenSSH
 
     Safe-Shutdown
 }

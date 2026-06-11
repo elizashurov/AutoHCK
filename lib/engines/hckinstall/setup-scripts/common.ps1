@@ -56,6 +56,18 @@ function Enable-PowerShellRemoting {
     Execute-Command -Path 'C:\Windows\System32\winrm.cmd' -Arguments 'set winrm/config/service "@{AllowUnencrypted="true"}"'
 }
 
+function Enable-OpenSSH {
+    Write-Output "Installing and enabling OpenSSH Server..."
+    Add-WindowsCapability -Online -Name "OpenSSH.Server~~~~0.0.1.0"
+    Set-Service -Name "sshd" -StartupType Automatic
+    Start-Service -Name "sshd"
+    New-ItemProperty -Path "HKLM:\SOFTWARE\OpenSSH" `
+        -Name "DefaultShell" `
+        -Value "C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe" `
+        -PropertyType String -Force
+    Write-Output "OpenSSH Server enabled"
+}
+
 function Enable-RemoteDesktop {
     Write-Output "Enabling Remote Desktop..."
     # Enable Remote Desktop connections.

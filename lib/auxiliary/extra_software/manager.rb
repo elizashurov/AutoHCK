@@ -115,6 +115,44 @@ module AutoHCK
       tools.run_on_machine(machine_name, "Installing #{sw_name}", full_cmd)
     end
 
+    # Installs a software package directly via a FunctestTools instance (no studio).
+    # Mirrors install_software_on_computer: uploads to a temp/UUID path and runs
+    # the configured install command with the same @sw_path@ replacement map.
+    def install_software_on_functest_client(sw_name, sw_config, tools)
+      @logger.info("Installing #{sw_name} on guest")
+      path = tools.upload_directory(Pathname.new(@ext_path).join(sw_name).to_s)
+
+      replacement_map = ReplacementMap.new(
+        '@sw_path@'   => path,
+        '@file_name@' => sw_config['file_name'],
+        '@temp@'      => '${env:TEMP}'
+      )
+
+      cmd = "#{sw_config['install_cmd']} #{sw_config['install_args']}"
+      full_cmd = replacement_map.replace(cmd)
+
+      @logger.debug("cmd guest:\n - path = #{path}\n - cmd = #{cmd}\n - full_cmd = #{full_cmd}\n")
+      tools.cmd(full_cmd)
+    end
+
+    def install_extra_software_on_functest_client_before_driver(tools)
+      @sw_names.each do |name|
+        sw_config = @sw_configs[name]
+        next unless sw_config['install_time']['driver'] == 'before'
+
+        install_software_on_functest_client(name, sw_config, tools)
+      end
+    end
+
+    def install_extra_software_on_functest_client_after_driver(tools)
+      @sw_names.each do |name|
+        sw_config = @sw_configs[name]
+        next unless sw_config['install_time']['driver'] == 'after'
+
+        install_software_on_functest_client(name, sw_config, tools)
+      end
+    end
+
     def install_software_before_driver(tools, machine_name)
       @sw_names.each do |name|
         sw_config = @sw_configs[name]

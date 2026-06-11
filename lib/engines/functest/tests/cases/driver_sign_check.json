@@ -1,0 +1,24 @@
+{
+    "name": "driver_sign_check",
+    "description": "Verify the installed driver .sys is digitally signed (uses @driver_module@)",
+    "test_system_ref": "VIRT-200",
+    "timeout": 120,
+    "test_steps": [
+        {
+            "desc": "Reboot so the freshly installed driver is fully loaded",
+            "guest_reboot": true
+        },
+        {
+            "desc": "Locate @driver_module@.sys in the DriverStore",
+            "guest_run": "$drv = Get-WindowsDriver -Online | Where-Object { $_.OriginalFileName -like '*@driver_module@.inf' } | Select-Object -First 1; if (-not $drv) { throw '@driver_module@ driver not found in driver store - driver may not be installed' }; $drvDir = Split-Path $drv.OriginalFileName -Parent; $sys = Get-ChildItem $drvDir -Filter '@driver_module@.sys' -ErrorAction SilentlyContinue | Select-Object -First 1; if (-not $sys) { throw '@driver_module@.sys not found in DriverStore at ' + $drvDir }; Write-Output \"Found: $($sys.FullName)\"",
+            "expected_output_contains": "Found:",
+            "timeout": 60
+        },
+        {
+            "desc": "Verify @driver_module@.sys is digitally signed",
+            "guest_run": "$drv = Get-WindowsDriver -Online | Where-Object { $_.OriginalFileName -like '*@driver_module@.inf' } | Select-Object -First 1; $drvDir = Split-Path $drv.OriginalFileName -Parent; $sys = Get-ChildItem $drvDir -Filter '@driver_module@.sys' | Select-Object -First 1; $sig = Get-AuthenticodeSignature $sys.FullName; Write-Output \"Signature status: $($sig.Status)\"; Write-Output \"Signer: $($sig.SignerCertificate.Subject)\"; if ($sig.Status -ne 'Valid') { throw '@driver_module@.sys is NOT signed (status: ' + $sig.Status + ')' }; Write-Output 'PASS: Driver is digitally signed'",
+            "expected_output_contains": "PASS:",
+            "timeout": 60
+        }
+    ]
+}
