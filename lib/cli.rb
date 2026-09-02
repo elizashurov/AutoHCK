@@ -99,6 +99,7 @@ module AutoHCK
     prop :manual, T::Boolean, default: false
     prop :auto_manual, T::Boolean, default: false
     prop :package_with_playlist, T::Boolean, default: false
+    prop :package_exclude_unreferenced_files, T::Boolean, default: false
     prop :enable_vbs, T::Boolean, default: false
     prop :tag_suffix, T.nilable(String)
     prop :fs_test_image_format, String, default: 'qcow2'
@@ -146,6 +147,10 @@ module AutoHCK
                 'Use --package-with-driver=unsigned to remove signature from the driver before including') do |pa|
         self.package_with_driver = pa || :keep
       end
+
+      parser.on('--package-exclude-unreferenced-files', TrueClass,
+                'Exclude driver files not referenced by the driver .inf before packaging',
+                &method(:package_exclude_unreferenced_files=))
 
       parser.on('-c', '--commit <commit_hash>', String,
                 'Commit hash for CI status update',

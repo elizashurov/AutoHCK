@@ -59,6 +59,8 @@ Usage: auto_hck.rb test [test options]
                                      Test results table can be broken. (experimental)
         --manual                     Run AutoHCK in manual mode
         --package-with-playlist      Load playlist into HLKX project package
+        --package-exclude-unreferenced-files
+                                     Exclude driver files not referenced by the driver's .inf before packaging
     -h, --help                       Show this message
 Usage: auto_hck.rb install [install options]
 

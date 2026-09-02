@@ -674,7 +674,8 @@ module AutoHCK
       remote_supplemental_path = prepare_package_supplemental_content
 
       res = @tools.create_project_package(@tag, package_playlist, nil, remote_driver_path, remote_supplemental_path,
-                                          remove_driver_signatures: test_options.package_with_driver == :unsigned)
+                                          remove_driver_signatures: test_options.package_with_driver == :unsigned,
+                                          exclude_unreferenced_files: test_options.package_exclude_unreferenced_files)
       print_project_package_results(res)
 
       r_name = @tag + File.extname(res['hostprojectpackagepath'])

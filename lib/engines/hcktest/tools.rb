@@ -382,11 +382,11 @@ module AutoHCK
     end
 
     def create_project_package(project, playlist = nil, handler = nil, driver_path = nil, supplemental_path = nil, # rubocop:disable Metrics/ParameterLists
-                               remove_driver_signatures: false)
+                               remove_driver_signatures: false, exclude_unreferenced_files: false)
       retry_tools_command(__method__) do
         act_with_tools do |tools|
           tools.create_project_package(project, playlist, handler, driver_path, supplemental_path,
-                                       remove_driver_signatures:)
+                                       remove_driver_signatures:, exclude_unreferenced_files:)
         end
       end
     end
