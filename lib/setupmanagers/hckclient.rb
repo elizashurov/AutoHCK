@@ -203,11 +203,8 @@ module AutoHCK
     def configure_fresh(run_only:)
       unless pool == @project.engine_tag
         return_when_client_up
-        if run_only
-          @logger.info("Preparing client skipped #{@name}...")
+        return configure_run_only if run_only
 
-          Thread.exit
-        end
         if pool_only_client?
           @logger.info("Skipping driver preparation for #{@name} " \
                        "(role: #{@project.engine.platform_clients.role_for(@name)})")
@@ -220,6 +217,14 @@ module AutoHCK
       configure_machine
       run_post_start_commands
       add_target_to_project unless pool_only_client?
+    end
+
+    def configure_run_only
+      @logger.info("Preparing client skipped #{@name}...")
+      Thread.exit unless @project.engine_platform.domain_controller
+
+      move_machine_to_pool
+      configure_machine
     end
 
     def configure(run_only: false)

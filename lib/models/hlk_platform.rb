@@ -65,6 +65,7 @@ module AutoHCK
       const :clients, T::Hash[String, HLKClient]
       const :extra_software, T::Array[String], default: []
       const :attach_devices, T::Array[String], default: []
+      const :domain_controller, T.nilable(DomainController), default: nil
 
       # client_id is the client's 1-based position in the clients map.
       sig { params(client_id: Integer).returns(T.nilable(HLKClient)) }
@@ -78,6 +79,10 @@ module AutoHCK
       # rubocop:disable Style/OptionalBooleanParameter
       def deserialize(hash, strict = false)
         super
+
+        if domain_controller && setupmanager != 'qemuhck'
+          raise InvalidConfigFile, 'Domain controller support requires the qemuhck setup manager'
+        end
 
         validate_qemuhck if setupmanager == 'qemuhck'
       end
@@ -94,6 +99,18 @@ module AutoHCK
         end
 
         clients.each_value { |client| validate_qemuhck_client(client) }
+        validate_domain_controller
+      end
+
+      sig { void }
+      def validate_domain_controller
+        dc = domain_controller
+        return if dc.nil?
+
+        dc.validate!
+        return unless clients.values.any? { |client| client.name.casecmp?(dc.name) || client.winrm_addr == dc.ip }
+
+        raise InvalidConfigFile, 'DC name and IP must not overlap with HLK clients'
       end
 
       sig { params(client: HLKClient).void }

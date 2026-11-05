@@ -156,18 +156,8 @@ module AutoHCK
     MONITOR_BASE_PORT = 10_000
     VNC_BASE_PORT = 5900
     MAX_RUN_ID = 999
-    # https://learn.microsoft.com/en-us/windows-hardware/test/hlk/testref/test-server-configuration
-    # 0 - Studio
-    # 1 - Active Directory (SVVP-only but mandatory)
-    # 2 - SUT / DUT
-    # 3 - Master client / Support client for DUT
-    # 4 - Stress Client 1
-    # 5 - Stress Client 2
-    # 6 - Stress Client 3
-    # 7 - Stress Client 4
-    # 8 - Stress Client 5
-    # 9 - Stress Client 6
-    # 10 - Stress Client 7 (LoadGen supports up to 64 SC machines, but 8 is usually sufficient, QE uses 4)
+    # Studio uses 0; clients use their 1-based platform order. An optional DC
+    # uses the next free ID. Keep this port-allocation stride stable.
     MAX_CLIENT_ID = 10
 
     DEFAULT_RUN_OPTIONS = {
@@ -229,7 +219,7 @@ module AutoHCK
 
       @id = format('%04d', @options['id'])
       @client_id = format('%02d', @options['client_id'])
-      @run_name = "QemuMachine#{@id}_CL#{@client_id}"
+      @run_name = "QemuMachine#{@id}_#{@options['name'] || "CL#{@client_id}"}"
 
       @devices_list << @options['devices_list']
       @workspace_path = @options['workspace_path']
@@ -250,7 +240,13 @@ module AutoHCK
       @logger.info("Loading machine: #{@machine_name}")
       res = machines[@machine_name]
       @logger.fatal("#{@machine_name} does not exist") unless res
-      res || raise(InvalidConfigFile, "#{@machine_name} does not exist")
+      machine = res || raise(InvalidConfigFile, "#{@machine_name} does not exist")
+      return machine unless @options['control_net_root_bus']
+
+      # Preserve the existing DC's direct NIC attachment and automatic PCI
+      # address assignment. Other VMs keep the machine profile's root port.
+      machine.merge('ctrl_dev_bus_name' => machine['bus_name'],
+                    'ctrl_dev_address' => nil, 'pcie_root_port' => nil)
     end
 
     def load_fw
@@ -267,11 +263,22 @@ module AutoHCK
 
       return unless @fw['nvram']
 
+      @fw['nvram'] = prepare_nvram
+      @machine_options << 'pflash1=pflash_vars'
+    end
+
+    def prepare_nvram
+      if (persistent = @options['persistent_nvram'])
+        raise InvalidConfigFile, "Persistent NVRAM does not exist: #{persistent}" unless File.file?(persistent)
+
+        @logger.info("Using persistent NVRAM: #{persistent}")
+        return persistent
+      end
+
       nvram = "#{@workspace_path}/#{@fw_name}_#{@id}_cl#{@client_id}.nvram"
       @logger.info("FW #{@fw_name} has NVRAM. Creating local copy #{@fw['nvram']} -> #{nvram}")
       FileUtils.cp(@fw['nvram'], nvram)
-      @fw['nvram'] = nvram
-      @machine_options << 'pflash1=pflash_vars'
+      nvram
     end
 
     def option_config(option)
@@ -714,6 +721,8 @@ module AutoHCK
       dev = @nm.control_device_command(device_info, full_replacement_map)
       @device_commands << dev
 
+      return if @options['control_net_only']
+
       process_optional_hck_network
 
       process_generic_hck_network('debug_net_device', :debug_device_command) if option_config('attach_debug_net')
@@ -807,7 +816,7 @@ module AutoHCK
       end
 
       if @fw['nvram']
-        cmd << "-blockdev node-name=pflash_vars,driver=file,filename=#{@fw['nvram']}"
+        cmd << "-blockdev node-name=pflash_vars,driver=file,filename=#{@fw['nvram'].shellescape}"
         cmd << '-global driver=cfi.pflash01,property=secure,value=on'
       end
 
@@ -819,7 +828,7 @@ module AutoHCK
         full_replacement_map.create_cmd([
           *base_cmd,
           *fw_cmd,
-          @machine['machine_uuid'],
+          @options['uuid'] ? "-uuid #{@options['uuid'].shellescape}" : @machine['machine_uuid'],
           @machine['pcie_root_port'],
           "-name #{@run_name}"
         ].compact.join(' ')),

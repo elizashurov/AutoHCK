@@ -19,6 +19,7 @@ module AutoHCK
         @dev_id = 0
 
         @net_test_speed = qemu_options['net_test_speed'] || DEFAULT_NET_SPEED
+        @control_mac = qemu_options['control_mac']
 
         @config = Json.read_json(CONFIG_JSON, @logger)
       end
@@ -74,6 +75,7 @@ module AutoHCK
         @dev_id += 1
 
         type_config = @config['devices'][type]
+        type_config = type_config.merge('mac' => @control_mac) if type == 'control' && @control_mac
         command_options['@speed@'] = if type == 'test'
                                        @net_test_speed
                                      else

@@ -1,8 +1,6 @@
 {
   "type": 1,
   "drivers": [
-    "NetKVM",
-    "vioscsi",
     "fwcfg64",
     "tpm"
   ],
@@ -10,7 +8,7 @@
     "usb-storage"
   ],
   "clients_options": {
-    "ctrl_net_device": "virtio-net-pci",
+    "ctrl_net_device": "e1000e",
     "viommu_state": true
   },
   "reject_test_names": [

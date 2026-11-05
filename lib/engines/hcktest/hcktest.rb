@@ -10,6 +10,7 @@ module AutoHCK
     include Helper
 
     autoload_relative :Tests, 'tests'
+    autoload_relative :DomainPreparation, 'domain_preparation'
 
     attr_reader :config, :drivers, :platform, :extensions, :platform_clients
 
@@ -234,21 +235,39 @@ module AutoHCK
         client.configure(run_only:)
       end
 
-      run_clients_post_start_host_commands
+      run_clients_post_start_host_commands unless run_only && @project.engine_platform.domain_controller
       @clients.each_value(&:synchronize)
     end
 
     def configure_setup_and_synchronize
+      return configure_hlk_setup unless @project.engine_platform.domain_controller
+
+      # Preserve the exact client state once we start changing domain membership.
+      @studio.keep_snapshot
+      @clients.each_value(&:keep_snapshot)
+      ResourceScope.open do |scope|
+        preparation = DomainPreparation.new(@project, @clients.keys, @domain_controller_runner)
+        scope << preparation
+        preparation.prepare!
+        configure_hlk_setup
+        preparation.verify!(@studio)
+      end
+      @project.save_session unless @project.restored?
+    end
+
+    def configure_hlk_setup
       return configure_and_synchronize_clients unless @studio.tools.nil?
 
       @studio.configure(@project.engine_platform.clients)
       configure_and_synchronize_clients
       @studio.keep_snapshot
       @clients.each_value(&:keep_snapshot)
-      @project.save_session unless @project.restored?
+      @project.save_session unless @project.restored? || @project.engine_platform.domain_controller
     end
 
     def run_clients_and_configure_setup(scope, **opts)
+      return run_domain_clients_and_configure_setup(scope, **opts) if @project.engine_platform.domain_controller
+
       retries = 0
       begin
         scope.transaction do |tmp_scope|
@@ -263,6 +282,16 @@ module AutoHCK
         @project.logger.info('Trying again to run and configure setup')
         retry
       end
+    end
+
+    def run_domain_clients_and_configure_setup(scope, **)
+      # Do not roll back the VM scope before the outer manual-mode error handler:
+      # leave failed guests running at that prompt, and preserve their overlays.
+      run_clients(scope, keep_alive: true, **)
+      configure_setup_and_synchronize
+    rescue AutoHCKError => e
+      @logger.error("Domain-enabled setup failed; no automatic overlay retry: #{e.message}")
+      raise
     end
 
     def upload_driver_package
@@ -309,15 +338,17 @@ module AutoHCK
     def pause_run_if_needed(exception = nil)
       test_options = @project.options.test
 
-      # @tests is created in prepare_tests method
-      # so it always exists. So we can use @tests.tests instead of @tests&.tests
       auto_manual_need = test_options.auto_manual &&
-                         (!exception.nil? || @tests.tests&.any?(&:failed?))
+                         (!exception.nil? || failed_tests?)
 
       @logger.debug("Switch to manual mode check: manual=#{test_options.manual} auto_manual_need=#{auto_manual_need}")
       return unless test_options.manual || auto_manual_need
 
       pause_run
+    end
+
+    def failed_tests?
+      (@tests&.tests || []).any?(&:failed?)
     end
 
     def pause_run
@@ -341,6 +372,7 @@ module AutoHCK
         raise EngineError, 'HLK test target is not defined' unless @project.options.test.manual
 
         @project.logger.info('HLK test target is not defined, allow in manual mode')
+        @test_list = []
         return
       end
 
@@ -374,21 +406,32 @@ module AutoHCK
       # used to simplify the HLK process by reusing the created package and just fixing
       # the root cause of the failure without the need to run all other tests
       ex1 = rescue2return { run_tests_without_config }
-      ex2 = rescue2return { run_tests_with_config }
-      ex3 = rescue2return { @tests.create_project_package }
-
-      # Sometimes results file missing filters for last test
-      # After creating project package, all filters should be applied
-      # Reload tests and update results to make sure the final report is correct
-      ex4 = rescue2return { @tests.update_tests_and_results }
+      ex2 = rescue2return { run_tests_with_config } unless ex1 && @project.engine_platform.domain_controller
+      ex3, ex4 = export_test_results
 
       # Propagate the first exception if any occurred; the most likely other exceptions are just
       # consequences of the first one and will be resolved after fixing the first root cause
       [ex1, ex2, ex3, ex4].each { |e| raise e if e }
     end
 
+    def export_test_results
+      return [] unless @tests
+      return [] if @project.engine_platform.domain_controller && @test_list&.empty?
+
+      package_error = rescue2return { @tests.create_project_package }
+
+      # Sometimes results file missing filters for last test
+      # After creating project package, all filters should be applied
+      # Reload tests and update results to make sure the final report is correct
+      [package_error, rescue2return { @tests.update_tests_and_results }]
+    end
+
     def auto_run
       ResourceScope.open do |scope|
+        if @project.engine_platform.domain_controller
+          DomainPreparation.validate_configuration!(@project)
+          @domain_controller_runner = @project.setup_manager.run_domain_controller(scope)
+        end
         run_studio(scope, **init_vm_options)
         sleep 5 until @studio.up?
 

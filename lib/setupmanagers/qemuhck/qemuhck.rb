@@ -9,6 +9,7 @@ module AutoHCK
     extend AutoloadExtension
 
     autoload_relative :Ns, 'ns'
+    autoload_relative :DomainController, 'domain_controller'
 
     include Helper
 
@@ -280,6 +281,34 @@ module AutoHCK
 
     def run_studio(scope, run_opts = nil)
       @studio_vm.run(scope, run_opts)
+    end
+
+    def run_domain_controller(scope)
+      dc = @platform.domain_controller
+      return if dc.nil?
+
+      dc.validate!
+      DomainController.new(@project, dc, domain_controller_vm_options(dc)).start(scope)
+    end
+
+    def domain_controller_vm_options(controller)
+      machine_id = @platform.clients.size + 1
+      if machine_id > QemuMachine::MAX_CLIENT_ID
+        raise InvalidConfigFile, 'No free QEMU machine ID for the domain controller'
+      end
+
+      {
+        'id' => @id.to_i, 'client_id' => machine_id, 'name' => controller.name,
+        'workspace_path' => @workspace_path, 'logger' => @logger,
+        'image_name' => controller.image, 'persistent_nvram' => controller.nvram, 'uuid' => controller.uuid,
+        'cpu_count' => controller.cpus, 'memory_gb' => controller.memory_gb, 'arch' => 'amd64',
+        'machine_type' => 'q35', 'fw_type' => 'uefi', 'boot_device' => 'ide-storage',
+        'ctrl_net_device' => 'e1000e', 'control_mac' => controller.mac, 'control_net_only' => true,
+        'control_net_root_bus' => true, 'pcie_spare_root_ports' => 0,
+        'devices_list' => [], 'tpm_state' => false, 'viommu_state' => false,
+        'vbs_state' => false, 'vsm_state' => false, 'numa_state' => false,
+        'enlightenments_state' => true, 'drive_unsafe_cache_state' => false
+      }
     end
 
     def run_hypervisor_client_command(name, cmd, arguments = nil)

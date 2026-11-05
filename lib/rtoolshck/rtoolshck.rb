@@ -59,6 +59,9 @@ require_relative 'ether'
 # +create_project_package+::     Creates a project's package.
 module AutoHCK
   class RToolsHCK
+    # Authentication failures must not be polled like a rebooting guest.
+    class MachineAuthenticationError < AutoHCKError; end
+
     WINRM_OPERATION_TIMEOUT = 9_999
     WINRM_RECIEVE_TIMEOUT = 99_999
     WINRM_RETRY_INTERVAL = 60
@@ -250,7 +253,7 @@ module AutoHCK
       if @no_studio
         logger('debug', 'initialize') { "no-studio mode: clients=#{@clients_addrs.keys}" }
       else
-        logger('debug', 'initialize') { "#{@user}:#{@pass}@#{@addr}" }
+        logger('debug', 'initialize') { "#{@user}@#{@addr}" }
         load_winrm_ps
         load_winrm_fs
         start_studio_services
@@ -331,8 +334,9 @@ module AutoHCK
 
       options = winrm_options_factory(
         clients_addr[:addr], clients_addr[:port] || WINRM_DEFAULT_PORT,
-        @user, @pass
+        clients_addr.fetch(:user, @user), clients_addr.fetch(:pass, @pass)
       )
+      options.merge!(clients_addr.fetch(:winrm_options, {}))
       WinRM::Connection.new(options)
     end
 
@@ -346,6 +350,18 @@ module AutoHCK
       end
     rescue HTTPClient::KeepAliveDisconnected
       raise WinrmPSRunError.new(where), "Machine #{machine} reset connection."
+    end
+
+    # WinRM errors may include the whole script. Redact before any action/error
+    # logger sees an exception, including its cause (used by error reporters).
+    def sensitive_machine_run(machine, cmd)
+      machine_run(machine, cmd)
+    rescue WinRM::WinRMAuthorizationError
+      raise MachineAuthenticationError,
+            "WinRM authentication failed on #{machine}; check configured credentials", cause: nil
+    rescue StandardError => e
+      raise WinrmPSRunError.new("#{machine}/winrm/run"),
+            "Sensitive guest command failed (#{e.class}); inspect guest event logs", cause: nil
     end
 
     def load_winrm_fs
@@ -422,13 +438,13 @@ module AutoHCK
       end
     end
 
-    def handle_action_exceptions(action, &block)
+    def handle_action_exceptions(action, sensitive: false, &block)
       raise RToolsHCKError.new('action'), 'instance is closed.' if @closed
       if @no_studio && !CLIENT_ACTIONS.include?(action)
         raise RToolsHCKError.new(action.to_s), 'not supported in no_studio mode.'
       end
 
-      log_action_call(action, block.binding)
+      log_action_call(action, block.binding) unless sensitive
       handle_exceptions do
         yield
       # We can have ECONNREFUSED error due to direct connection to
@@ -1191,9 +1207,9 @@ module AutoHCK
     # +machine+::      The name of the machine as registered with the HCK\HLK
     #                  controller
     # +cmd+::          The command to run as a string
-    def run_on_machine(machine, cmd)
-      handle_action_exceptions(__method__) do
-        ret = machine_run(machine, cmd)
+    def run_on_machine(machine, cmd, sensitive: false)
+      handle_action_exceptions(__method__, sensitive:) do
+        ret = sensitive ? sensitive_machine_run(machine, cmd) : machine_run(machine, cmd)
         @json ? { 'result' => 'Success', 'content' => ret } : true
       end
     end

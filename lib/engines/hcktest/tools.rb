@@ -4,6 +4,7 @@
 module AutoHCK
   # Tools class
   class Tools
+    DOMAIN_CLIENT_WINRM_OPTIONS = { transport: :negotiate, basic_auth_only: false }.freeze
     ACTION_RETRIES = 5
     HLK_ACTION_RETRY_SLEEP = 30
     ACTION_RETRY_SLEEP = 90
@@ -23,6 +24,7 @@ module AutoHCK
         conn.merge!(no_studio: true, clients_addrs: @clients_addrs)
       else
         @clients = clients
+        @local_accounts = project.engine_platform.domain_controller
         conn.merge!(addr: ip_addr, clients_addrs: config_clients_addrs, timeout: 120)
       end
 
@@ -109,8 +111,18 @@ module AutoHCK
           addr: client.winrm_addr,
           port: client.winrm_port
         }
+        clients_addrs[client.name][:user] = self.class.local_username(client.name, @config['windows_username']) \
+          if @local_accounts
+        clients_addrs[client.name][:winrm_options] = DOMAIN_CLIENT_WINRM_OPTIONS if @local_accounts
       end
       clients_addrs
+    end
+
+    def self.local_username(machine, username)
+      return "#{machine}\\#{username.delete_prefix('.\\')}" if username.start_with?('.\\')
+      return username if username.include?('\\') || username.include?('@')
+
+      "#{machine}\\#{username}"
     end
 
     def prep_stream_for_log(stream)
@@ -213,12 +225,12 @@ module AutoHCK
       retry
     end
 
-    def run_on_machine(machine, desc, cmd)
+    def run_on_machine(machine, desc, cmd, retry_on_failure: true, sensitive: false)
       retries ||= 0
-      act_with_tools_on_machine(machine) { _1.run_on_machine(machine, cmd) }
+      act_with_tools_on_machine(machine) { _1.run_on_machine(machine, cmd, sensitive:) }
     rescue ToolsHCKError => e
       @logger.warn(e.message)
-      unless (retries += 1) < ACTION_RETRIES
+      unless retry_on_failure && (retries += 1) < ACTION_RETRIES
         raise RunOnMachineError,
               "Running command (#{desc}) on machine #{machine} failed"
       end
@@ -288,8 +300,32 @@ module AutoHCK
       retry
     end
 
-    def restart_machine_and_wait(_machine)
-      raise ToolsHCKError, 'Unimplemented method: restart_machine_and_wait'
+    # A changed boot timestamp plus an authenticated WinRM response proves a
+    # reboot completed even if a fast reboot's offline interval was missed.
+    def restart_machine_and_wait(machine, timeout: 600)
+      Timeout.timeout(timeout) do
+        previous_boot = machine_boot_id(machine)
+        run_on_machine(machine, 'schedule reboot',
+                       'shutdown.exe /r /t 5 /f; if ($LASTEXITCODE -ne 0) { throw "Reboot failed" }',
+                       retry_on_failure: false, sensitive: true)
+        loop do
+          sleep 5
+          current_boot = machine_boot_id(machine)
+          break if !current_boot.empty? && current_boot != previous_boot
+        rescue ToolsHCKError
+          # WinRM is expected to disappear during the reboot.
+          next
+        end
+      end
+      @logger.info("#{machine} returned after reboot; authenticated WinRM verified")
+    rescue Timeout::Error
+      raise RestartMachineError, "#{machine} did not complete its reboot within #{timeout}s"
+    end
+
+    def machine_boot_id(machine)
+      run_on_machine(machine, 'read boot timestamp',
+                     '$ErrorActionPreference = "Stop"; (Get-CimInstance Win32_OperatingSystem).LastBootUpTime.Ticks',
+                     retry_on_failure: false, sensitive: true).strip
     end
 
     def restart_machine(machine)
